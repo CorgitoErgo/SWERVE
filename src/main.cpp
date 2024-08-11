@@ -4,22 +4,6 @@
 #include "pros/rotation.hpp"
 #include <cmath>
 
-// Define motor ports
-#define LEFT_UPPER_BEVEL_MOTOR_1 2
-#define LEFT_UPPER_BEVEL_MOTOR_2 13
-#define LEFT_LOWER_BEVEL_MOTOR_1 1
-#define LEFT_LOWER_BEVEL_MOTOR_2 12
-#define RIGHT_UPPER_BEVEL_MOTOR_1 9
-#define RIGHT_UPPER_BEVEL_MOTOR_2 19
-#define RIGHT_LOWER_BEVEL_MOTOR_1 10
-#define RIGHT_LOWER_BEVEL_MOTOR_2 20
-
-// Define rotational sensor ports
-#define LEFT_ROTATION_SENSOR_PORT 14
-#define RIGHT_ROTATION_SENSOR_PORT 18
-
-#define ZERO_VECTOR INFINITY
-
 pros::Controller master(pros::E_CONTROLLER_MASTER);
 pros::Motor luA(LEFT_UPPER_BEVEL_MOTOR_1, pros::E_MOTOR_GEARSET_18, false, pros::E_MOTOR_ENCODER_DEGREES);
 pros::Motor luB(LEFT_UPPER_BEVEL_MOTOR_2, pros::E_MOTOR_GEARSET_18, false, pros::E_MOTOR_ENCODER_DEGREES);
@@ -33,11 +17,6 @@ pros::Motor rlB(RIGHT_LOWER_BEVEL_MOTOR_2, pros::E_MOTOR_GEARSET_18, false, pros
 
 pros::Rotation left_rotation_sensor(LEFT_ROTATION_SENSOR_PORT, true);
 pros::Rotation right_rotation_sensor(RIGHT_ROTATION_SENSOR_PORT, true);
-
-int leftX, leftY, rightX, rightY;
-int left_turn_speed, right_turn_speed;
-float other_angle, target_angle;
-bool setAngle = false;
 
 void brake(){
     luA.brake();
@@ -132,11 +111,6 @@ void set_wheel_angle(){
             right_error -= 360;
         while (right_error < -180)
             right_error += 360;
-
-        // PID control constants
-        const float kP = 1.4;
-        const float kI = 0.002;
-        const float kD = 0.8;
 
         while(setAngle){
             left_current_angle = getNormalizedSensorAngle(left_rotation_sensor);
