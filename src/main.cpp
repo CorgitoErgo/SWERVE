@@ -30,7 +30,7 @@ void brake(){
     pros::delay(1);
 }
 
-float getNormalizedSensorAngle(pros::Rotation &sensor)
+int getNormalizedSensorAngle(pros::Rotation &sensor)
 {
     float angle = sensor.get_angle() / 100.0; // Convert from centidegrees to degrees
 
@@ -74,33 +74,35 @@ double getAngle(int x, int y)
     }
 }
 
+bool reverseDriveL = false;
+bool reverseDriveR = false;
 void set_wheel_angle(){
     while(1){
-        float left_current_angle = getNormalizedSensorAngle(left_rotation_sensor);
-        float right_current_angle = getNormalizedSensorAngle(right_rotation_sensor);
+        // float left_current_angle = getNormalizedSensorAngle(left_rotation_sensor);
+        // float right_current_angle = getNormalizedSensorAngle(right_rotation_sensor);
 
-        // Calculate error between current and target angle
-        float left_error = target_angle - left_current_angle;
-        float right_error = target_angle - right_current_angle;
+        // // Calculate error between current and target angle
+        // float left_error = target_angle - left_current_angle;
+        // float right_error = target_angle - right_current_angle;
 
-        // Normalize error to be within -180 to 180 degrees
-        while (left_error > 180) left_error -= 360;
-        while (left_error < -180) left_error += 360;
-        while (right_error > 180) right_error -= 360;
-        while (right_error < -180) right_error += 360;
+        // // Normalize error to be within -180 to 180 degrees
+        // while (left_error > 180) left_error -= 360;
+        // while (left_error < -180) left_error += 360;
+        // while (right_error > 180) right_error -= 360;
+        // while (right_error < -180) right_error += 360;
 
-        // Decide whether to rotate the wheel or reverse the drive
-        if (fabs(left_error) > 90) {
-            // Reverse the drive direction
-            left_error -= 180;
-            if (left_error < -180) left_error += 360;
-        }
+        // // Decide whether to rotate the wheel or reverse the drive
+        // if (fabs(left_error) > 90) {
+        //     // Reverse the drive direction
+        //     left_error -= 180;
+        //     if (left_error < -180) left_error += 360;
+        // }
 
-        if (fabs(right_error) > 90) {
-            // Reverse the drive direction
-            right_error -= 180;
-            if (right_error < -180) right_error += 360;
-        }
+        // if (fabs(right_error) > 90) {
+        //     // Reverse the drive direction
+        //     right_error -= 180;
+        //     if (right_error < -180) right_error += 360;
+        // }
 
         float left_previous_error = 0;
         float right_previous_error = 0;
@@ -109,11 +111,11 @@ void set_wheel_angle(){
         float right_integral = 0;
 
         while(setAngle){
-            left_current_angle = getNormalizedSensorAngle(left_rotation_sensor);
-            right_current_angle = getNormalizedSensorAngle(right_rotation_sensor);
+            float left_current_angle = getNormalizedSensorAngle(left_rotation_sensor);
+            float right_current_angle = getNormalizedSensorAngle(right_rotation_sensor);
 
-            left_error = target_angle - left_current_angle;
-            right_error = target_angle - right_current_angle;
+            float left_error = target_angle - left_current_angle;
+            float right_error = target_angle - right_current_angle;
 
             // Normalize error again after updating current angles
             while (left_error > 180) left_error -= 360;
@@ -122,14 +124,22 @@ void set_wheel_angle(){
             while (right_error < -180) right_error += 360;
 
             // Recheck if we need to reverse the drive
-            if (fabs(left_error) > 90) {
+            if (fabs(left_error) >= 90) {
+                reverseDriveL = !reverseDriveL;
                 left_error -= 180;
-                //if (left_error < -180) left_error += 360;
+                if (left_error < -180){ 
+                    left_error += 360;
+                    reverseDriveL = !reverseDriveL;
+                }
             }
 
-            if (fabs(right_error) > 90) {
+            if (fabs(right_error) >= 90) {
+                reverseDriveR = !reverseDriveR;
                 right_error -= 180;
-                //if (right_error < -180) right_error += 360;
+                if (right_error < -180) {
+                    right_error += 360;
+                    reverseDriveR = !reverseDriveR;
+                }
             }
 
             left_integral += left_error;
@@ -141,11 +151,11 @@ void set_wheel_angle(){
             left_previous_error = left_error;
             right_previous_error = right_error;
 
-            float left_motor_speed = kP * left_error + kI * left_integral + kD * left_derivative;
-            float right_motor_speed = kP * right_error + kI * right_integral + kD * right_derivative;
+            float left_motor_speed = lkP * left_error + lkI * left_integral + lkD * left_derivative;
+            float right_motor_speed = rkP * right_error + rkI * right_integral + rkD * right_derivative;
 
-            left_turn_speed = left_motor_speed;
-            right_turn_speed = right_motor_speed;
+            left_turn_speed = left_motor_speed*0.7;
+            right_turn_speed = right_motor_speed*0.7;
 
             if(fabs(left_error) <= 5){
                 left_turn_speed = 0;
@@ -160,13 +170,15 @@ void set_wheel_angle(){
                 break;
             }
 
-            pros::delay(5);
+            pros::delay(2);
         }
-        pros::delay(10);
+        pros::delay(15);
     }
 }
 
 int translation = 0;
+int translationL = 0;
+int translationR = 0;
 
 void SwerveTranslation(){
     while(1){
@@ -176,10 +188,15 @@ void SwerveTranslation(){
         direction = round(direction * 57.2958); // Convert to degrees
 
         if(direction < 10000 && magnitude >= 5){
-            std::cout << "direction: " << direction << std::endl;
+            float left_sensor_angle = getNormalizedSensorAngle(left_rotation_sensor);
+            float right_sensor_angle = getNormalizedSensorAngle(right_rotation_sensor);
 
-            // float left_sensor_angle = getNormalizedSensorAngle(left_rotation_sensor);
-            // float right_sensor_angle = getNormalizedSensorAngle(right_rotation_sensor);
+            std::cout << "directionL: " << left_sensor_angle << std::endl;
+            std::cout << "directionR: " << right_sensor_angle << std::endl;
+
+            std::cout << "RevL: " << reverseDriveL << std::endl;
+            std::cout << "RevR: " << reverseDriveR << std::endl;
+
             if (direction > 0)
                 other_angle = direction - 180;
             else
@@ -190,10 +207,66 @@ void SwerveTranslation(){
             // float left_error_other = fabs(other_angle - left_sensor_angle);
             // float right_error_other = fabs(other_angle - right_sensor_angle);
 
-            target_angle = direction;
+            target_angle = other_angle;
             setAngle = true;
+            std::cout << "direction: " << other_angle << std::endl;
 
-            translation = move_speed;
+            if(other_angle <= 95 && other_angle >= -85){
+                if(left_sensor_angle <= 105 && left_sensor_angle >= -95)
+                    translationL = move_speed;
+                else
+                    translationL = -move_speed;
+
+                if(right_sensor_angle <= 105 && right_sensor_angle >= -95)
+                    translationR = move_speed;
+                else
+                    translationR = -move_speed;
+            }
+            else{
+                if(left_sensor_angle <= 105 && left_sensor_angle >= -95)
+                    translationL = -move_speed;
+                else
+                    translationL = move_speed;
+
+                if(right_sensor_angle <= 105 && right_sensor_angle >= -95)
+                    translationR = -move_speed;
+                else
+                    translationR = move_speed;
+            }
+
+            // if(direction <= 100 && direction >= -85){
+            //     if(left_sensor_angle <= 100 && left_sensor_angle >= -85)
+            //         translationL = -move_speed;
+            //     else
+            //         translationL = move_speed;
+
+            //     if(right_sensor_angle <= 100 && right_sensor_angle >= -85)
+            //         translationR = -move_speed;
+            //     else
+            //         translationR = move_speed;
+            // }
+            // else{
+            //     if(left_sensor_angle <= 100 && left_sensor_angle >= -85)
+            //         translationL = move_speed;
+            //     else
+            //         translationL = -move_speed;
+
+            //     if(right_sensor_angle <= 100 && right_sensor_angle >= -85)
+            //         translationR = move_speed;
+            //     else
+            //         translationR = -move_speed;
+            // }
+
+            // if(left_sensor_angle > 0)
+            //     translationL = -move_speed;
+            // else
+            //     translationL = move_speed;
+
+            // if(right_sensor_angle > 0)
+            //     translationR = -move_speed;
+            // else
+            //     translationR = move_speed;
+            
 
             // luA.move_velocity(move_speed + left_turn_speed - rightX);
             // luB.move_velocity(move_speed + left_turn_speed - rightX);
@@ -204,10 +277,13 @@ void SwerveTranslation(){
             // ruB.move_velocity(-move_speed + right_turn_speed - rightX);
             // rlA.move_velocity(-move_speed - right_turn_speed - rightX);
             // rlB.move_velocity(-move_speed - right_turn_speed - rightX);
+            pros::delay(10);
         }
         else{
             move_speed = 0;
             translation = 0;
+            translationL = 0;
+            translationR = 0;
         }
 
         pros::delay(5);
@@ -232,7 +308,7 @@ void SwerveRotation(){
                 // rlA.move(- right_turn_speed - rightX);
                 // rlB.move(- right_turn_speed - rightX);
         }
-        pros::delay(5);
+        pros::delay(10);
     }
 }
 
@@ -250,8 +326,18 @@ void initialize(){
 
     left_rotation_sensor.set_data_rate(5);
     right_rotation_sensor.set_data_rate(5);
-    left_rotation_sensor.reset();
-    right_rotation_sensor.reset();
+
+    while(!left_rotation_sensor.reset());
+    while(!right_rotation_sensor.reset());
+
+    left_rotation_sensor.set_position(0);
+    right_rotation_sensor.set_position(0);
+
+    std::cout << left_rotation_sensor.get_angle() << std::endl;
+    std::cout << right_rotation_sensor.get_angle() << std::endl;
+
+    std::cout << getNormalizedSensorAngle(left_rotation_sensor) << std::endl;
+    std::cout << getNormalizedSensorAngle(right_rotation_sensor) << std::endl;
 
     pros::Task translate(SwerveTranslation);
     pros::Task wheel_angle(set_wheel_angle);
@@ -274,16 +360,16 @@ void opcontrol()
             brake();
         }
 
-        luA.move_velocity(translation + left_turn_speed - rightX);
-        luB.move_velocity(translation + left_turn_speed - rightX);
-        llA.move_velocity(translation - left_turn_speed - rightX);
-        llB.move_velocity(translation - left_turn_speed - rightX);
+        luA.move_velocity(-translationL + left_turn_speed - rightX);
+        luB.move_velocity(-translationL + left_turn_speed - rightX);
+        llA.move_velocity(-translationL - left_turn_speed - rightX);
+        llB.move_velocity(-translationL - left_turn_speed - rightX);
 
-        ruA.move_velocity(-translation + right_turn_speed - rightX);
-        ruB.move_velocity(-translation + right_turn_speed - rightX);
-        rlA.move_velocity(-translation - right_turn_speed - rightX);
-        rlB.move_velocity(-translation - right_turn_speed - rightX);
+        ruA.move_velocity(translationR + right_turn_speed - rightX);
+        ruB.move_velocity(translationR + right_turn_speed - rightX);
+        rlA.move_velocity(translationR - right_turn_speed - rightX);
+        rlB.move_velocity(translationR - right_turn_speed - rightX);
         
-        pros::delay(20);
+        pros::delay(30);
     }
-}
+}   
