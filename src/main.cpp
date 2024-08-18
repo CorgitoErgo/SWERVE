@@ -34,9 +34,9 @@ int getNormalizedSensorAngle(pros::Rotation &sensor)
 {
     float angle = sensor.get_angle() / 100.0; // Convert from centidegrees to degrees
 
-    if (angle < -185)
+    if (angle < -186)
         angle += 360;
-    else if (angle > 185)
+    else if (angle > 186)
         angle -= 360;
 
     return angle;
@@ -137,14 +137,14 @@ void set_wheel_angle(){
             while (right_error < -180) right_error += 360;
 
             // Recheck if we need to reverse the drive
-            if (fabs(left_error) >= 90) {
+            if (fabs(left_error) > 90) {
                 left_error -= 180;
                 if (left_error < -180){ 
                     left_error += 360;
                 }
             }
 
-            if (fabs(right_error) >= 90) {
+            if (fabs(right_error) > 90) {
                 right_error -= 180;
                 if (right_error < -180) {
                     right_error += 360;
@@ -216,11 +216,19 @@ void SwerveTranslation(){
             // float left_error_other = fabs(other_angle - left_sensor_angle);
             // float right_error_other = fabs(other_angle - right_sensor_angle);
 
+            if(other_angle == 180){
+                other_angle -= 10;
+                left_sensor_angle -= 10;
+                right_sensor_angle -= 10;
+            }
+            else if(other_angle == 0){
+                other_angle += 10;
+                left_sensor_angle += 10;
+                right_sensor_angle += 10;
+            }
+
             target_angle = other_angle;
             setAngle = true;
-            if(fabs(target_angle) - fabs(left_sensor_angle) > 90){
-
-            }
             std::cout << "direction: " << other_angle << std::endl;
 
 
@@ -278,13 +286,6 @@ void SwerveTranslation(){
             //     translationR = -move_speed*(direction*0.01)*(right_sensor_angle*0.01);
             // }
 
-            if(direction == 180){
-                direction -= 5;
-            }
-            else if(direction == 0){
-                direction += 5;
-            }
-
             translationL = -move_speed;
             translationR = -move_speed;
 
@@ -292,7 +293,7 @@ void SwerveTranslation(){
                 translationL *= -1;
             if(right_sensor_angle < 0)
                 translationR *= -1;
-            if(direction < 0){
+            if(other_angle > 0){
                 translationL *= -1;
                 translationR *= -1;
             }
