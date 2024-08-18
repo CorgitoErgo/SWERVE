@@ -34,9 +34,9 @@ int getNormalizedSensorAngle(pros::Rotation &sensor)
 {
     float angle = sensor.get_angle() / 100.0; // Convert from centidegrees to degrees
 
-    if (angle < -180)
+    if (angle < -185)
         angle += 360;
-    else if (angle > 180)
+    else if (angle > 185)
         angle -= 360;
 
     return angle;
@@ -74,8 +74,21 @@ double getAngle(int x, int y)
     }
 }
 
+double wrapAngle(double angle) {
+    if (angle > 180.0) {
+        return angle -= 360;
+    } else if (angle < -180.0) {
+        return angle += 360;
+    } else {
+        return angle;
+    }
+}
+
 bool reverseDriveL = false;
 bool reverseDriveR = false;
+int absoluteAngleL = 0;
+int absoluteAngleR = 0;
+
 void set_wheel_angle(){
     while(1){
         // float left_current_angle = getNormalizedSensorAngle(left_rotation_sensor);
@@ -114,8 +127,8 @@ void set_wheel_angle(){
             float left_current_angle = getNormalizedSensorAngle(left_rotation_sensor);
             float right_current_angle = getNormalizedSensorAngle(right_rotation_sensor);
 
-            float left_error = target_angle - left_current_angle;
-            float right_error = target_angle - right_current_angle;
+            float left_error = wrapAngle(target_angle - left_current_angle);
+            float right_error = wrapAngle(target_angle - right_current_angle);
 
             // Normalize error again after updating current angles
             while (left_error > 180) left_error -= 360;
@@ -125,20 +138,16 @@ void set_wheel_angle(){
 
             // Recheck if we need to reverse the drive
             if (fabs(left_error) >= 90) {
-                reverseDriveL = !reverseDriveL;
                 left_error -= 180;
                 if (left_error < -180){ 
                     left_error += 360;
-                    reverseDriveL = !reverseDriveL;
                 }
             }
 
             if (fabs(right_error) >= 90) {
-                reverseDriveR = !reverseDriveR;
                 right_error -= 180;
                 if (right_error < -180) {
                     right_error += 360;
-                    reverseDriveR = !reverseDriveR;
                 }
             }
 
@@ -172,7 +181,7 @@ void set_wheel_angle(){
 
             pros::delay(2);
         }
-        pros::delay(15);
+        pros::delay(5);
     }
 }
 
@@ -209,29 +218,83 @@ void SwerveTranslation(){
 
             target_angle = other_angle;
             setAngle = true;
+            if(fabs(target_angle) - fabs(left_sensor_angle) > 90){
+
+            }
             std::cout << "direction: " << other_angle << std::endl;
 
-            if(other_angle <= 95 && other_angle >= -85){
-                if(left_sensor_angle <= 105 && left_sensor_angle >= -95)
-                    translationL = move_speed;
-                else
-                    translationL = -move_speed;
 
-                if(right_sensor_angle <= 105 && right_sensor_angle >= -95)
-                    translationR = move_speed;
-                else
-                    translationR = -move_speed;
+            // if(int(other_angle) != 90 || int(other_angle) != -90){
+            //     if(other_angle <= 95 && other_angle >= -85){
+            //         if(left_sensor_angle <= 105 && left_sensor_angle >= -105)
+            //             translationL = move_speed;
+            //         else
+            //             translationL = -move_speed;
+
+            //         if(right_sensor_angle <= 105 && right_sensor_angle >= -105)
+            //             translationR = move_speed;
+            //         else
+            //             translationR = -move_speed;
+            //     }
+            //     else{
+            //         if(left_sensor_angle <= 105 && left_sensor_angle >= -105)
+            //             translationL = -move_speed;
+            //         else
+            //             translationL = move_speed;
+
+            //         if(right_sensor_angle <= 105 && right_sensor_angle >= -105)
+            //             translationR = -move_speed;
+            //         else
+            //             translationR = move_speed;
+            //     }
+            // }
+
+            // if((int(other_angle) < 80 && int(other_angle) >= 0) || (int(other_angle) < 0 && int(other_angle) > -80)){
+            //     if(left_sensor_angle <= 85 && left_sensor_angle >= -95)
+            //         translationL = move_speed;
+            //     else
+            //         translationL = -move_speed;
+
+            //     if(right_sensor_angle <= 85 && right_sensor_angle >= -95)
+            //         translationR = move_speed;
+            //     else
+            //         translationR = -move_speed;
+            //     pros::delay(100);
+            // }
+            // else if((int(other_angle) > 115 && int(other_angle) <= 180) || (int(other_angle) < -90 && int(other_angle) > -180)){
+            //     if(left_sensor_angle <= 85 && left_sensor_angle >= -95)
+            //         translationL = -move_speed;
+            //     else
+            //         translationL = move_speed;
+
+            //     if(right_sensor_angle <= 85 && right_sensor_angle >= -95)
+            //         translationR = -move_speed;
+            //     else
+            //         translationR = move_speed;
+            //     pros::delay(100);
+            // }
+            // else{
+            //     translationL = -move_speed*(direction*0.01)*(left_sensor_angle*0.01);
+            //     translationR = -move_speed*(direction*0.01)*(right_sensor_angle*0.01);
+            // }
+
+            if(direction == 180){
+                direction -= 5;
             }
-            else{
-                if(left_sensor_angle <= 105 && left_sensor_angle >= -95)
-                    translationL = -move_speed;
-                else
-                    translationL = move_speed;
+            else if(direction == 0){
+                direction += 5;
+            }
 
-                if(right_sensor_angle <= 105 && right_sensor_angle >= -95)
-                    translationR = -move_speed;
-                else
-                    translationR = move_speed;
+            translationL = -move_speed;
+            translationR = -move_speed;
+
+            if(left_sensor_angle < 0)
+                translationL *= -1;
+            if(right_sensor_angle < 0)
+                translationR *= -1;
+            if(direction < 0){
+                translationL *= -1;
+                translationR *= -1;
             }
 
             // if(direction <= 100 && direction >= -85){
@@ -277,7 +340,7 @@ void SwerveTranslation(){
             // ruB.move_velocity(-move_speed + right_turn_speed - rightX);
             // rlA.move_velocity(-move_speed - right_turn_speed - rightX);
             // rlB.move_velocity(-move_speed - right_turn_speed - rightX);
-            pros::delay(10);
+            pros::delay(2);
         }
         else{
             move_speed = 0;
@@ -286,7 +349,7 @@ void SwerveTranslation(){
             translationR = 0;
         }
 
-        pros::delay(5);
+        pros::delay(2);
     }
 }
 
@@ -370,6 +433,6 @@ void opcontrol()
         rlA.move_velocity(translationR - right_turn_speed - rightX);
         rlB.move_velocity(translationR - right_turn_speed - rightX);
         
-        pros::delay(30);
+        pros::delay(2);
     }
 }   
