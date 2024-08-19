@@ -17,10 +17,16 @@
 // Stuff
 int leftX, leftY, rightX, rightY;
 int left_turn_speed, right_turn_speed;
-float other_angle, target_angle;
+float other_angle, target_angle = 0;
 bool setAngle = false;
 
 // PID control constants for swerve strafing
-const float kP = 1.4;
-const float kI = 0.002;
-const float kD = 0.8;
+const float lkP = 1.65;
+const float lkI = 0.0015;
+const float lkD = 0.75;
+
+const float rkP = 1.65;
+const float rkI = 0.0015;
+const float rkD = 0.75;
+
+const int ANGLE_THRESHOLD = 10;
