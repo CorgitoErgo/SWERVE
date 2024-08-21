@@ -265,6 +265,7 @@ double direction_targL = 0;
 double direction_targR = 0;
 
 void SwerveRotation(){
+    float turnAngle = 45;
     while(1){
         float magnitudeR = std::sqrt(rightX * rightX + rightY * rightY);
         int move_speedR = static_cast<int>(magnitudeR);
@@ -273,73 +274,26 @@ void SwerveRotation(){
             float directionR = -getAngle(rightY, rightX);
             directionR = round(directionR * 57.2958);
 
+            float direction = -getAngle(leftY, leftX);
+            direction = round(direction * 57.2958);
+
             float left_sensor_angle = getNormalizedSensorAngle(left_rotation_sensor);
             float right_sensor_angle = getNormalizedSensorAngle(right_rotation_sensor);
 
-            std::cout << "left angle: " << left_sensor_angle << std::endl;
-            std::cout << "right angle: " << right_sensor_angle << std::endl;
+            std::cout << "left angle: " << direction << std::endl;
+            // std::cout << "right angle: " << right_sensor_angle << std::endl;
 
             if(leftX == 0 && leftY == 0){
                 direction_targL = 10;
                 direction_targR = 170;
-
-                if(directionR > 0){
-                    translationL = -move_speedR;
-                    translationR = -move_speedR;
-                    if(left_sensor_angle < 0 && right_sensor_angle > 0){
-                        translationL = -move_speedR;
-                        translationR = move_speedR;
-                    }
-                    else if(left_sensor_angle > 0 && right_sensor_angle < 0){
-                        translationL = move_speedR;
-                        translationR = -move_speedR;
-                    }
-                }
-                else if(directionR < 0){
-                    translationL = move_speedR;
-                    translationR = move_speedR;
-                    if((left_sensor_angle > 0 && right_sensor_angle < 0) || (left_sensor_angle < 0 && right_sensor_angle > 0)){
-                        translationL = move_speedR;
-                        translationR = -move_speedR;
-                    }
-                    else if(left_sensor_angle > 0 && right_sensor_angle < 0){
-                        translationL = -move_speedR;
-                        translationR = move_speedR;
-                    }
-                }
             }
             else{
                 direction_targL = 40;
-                direction_targR = 130;
-
-                float magnitude = std::sqrt(leftY * leftY + leftX * leftX);
-                int move_speed = static_cast<int>(magnitude);
-
-                if(directionR > 0){
-                    translationL = -move_speedR;
-                    translationR = -move_speedR;
-                    if(left_sensor_angle < 0 && right_sensor_angle > 0){
-                        translationL = -move_speedR;
-                        translationR = move_speedR;
-                    }
-                    else if(left_sensor_angle > 0 && right_sensor_angle < 0){
-                        translationL = move_speedR;
-                        translationR = -move_speedR;
-                    }
-                }
-                else if(directionR < 0){
-                    translationL = move_speedR;
-                    translationR = move_speedR;
-                    if((left_sensor_angle > 0 && right_sensor_angle < 0) || (left_sensor_angle < 0 && right_sensor_angle > 0)){
-                        translationL = move_speedR;
-                        translationR = -move_speedR;
-                    }
-                    else if(left_sensor_angle > 0 && right_sensor_angle < 0){
-                        translationL = -move_speedR;
-                        translationR = move_speedR;
-                    }
-                }
+                direction_targR = 45;
             }
+
+            float magnitude = std::sqrt(leftY * leftY + leftX * leftX);
+            int move_speed = static_cast<int>(magnitude);
 
             double setpointAngleL = closestAngle(left_sensor_angle, direction_targL);
             double setpointAngleFlippedL = closestAngle(left_sensor_angle, direction_targL + 180.0);
@@ -347,21 +301,32 @@ void SwerveRotation(){
             double setpointAngleR = closestAngle(right_sensor_angle, direction_targR);
             double setpointAngleFlippedR = closestAngle(right_sensor_angle, direction_targR + 180.0);
 
-            if (abs(setpointAngleL) <= abs(setpointAngleFlippedL)){
-                target_angleL = (left_sensor_angle + setpointAngleL);
-            }
-            else{
-                target_angleL = (left_sensor_angle + setpointAngleFlippedL);
+            if(abs(direction) > 360){
+                direction = 30;
             }
 
-            if (abs(setpointAngleR) <= abs(setpointAngleFlippedR)){
-                target_angleR = (right_sensor_angle + setpointAngleR);
+            if (closestAngle(direction, 45) >= 90.0)
+            {
+                target_angleL = direction + sgn(direction)*turnAngle;
             }
-            else{
-                target_angleR = (right_sensor_angle + setpointAngleFlippedR);
+            else
+            {
+                target_angleL = direction - sgn(direction)*turnAngle;
             }
+            if (closestAngle(direction, -45) >= 90.0)
+            {
+                target_angleR = direction + sgn(direction)*turnAngle;
+            }
+            else
+            {
+                target_angleR = direction - sgn(direction)*turnAngle;
+            }
+
+            std::cout << "left angle: " << target_angleL << std::endl;
+            std::cout << "right angle: " << target_angleR << std::endl;
 
             setAngle = true;
+            pros::delay(5);
         }
         pros::delay(10);
     }
@@ -414,15 +379,15 @@ void opcontrol()
             brake();
         }
 
-        luA.move_velocity(-translationL + left_turn_speed);
-        luB.move_velocity(-translationL + left_turn_speed);
-        llA.move_velocity(-translationL - left_turn_speed);
-        llB.move_velocity(-translationL - left_turn_speed);
+        luA.move_velocity(-translationL + rightX + left_turn_speed);
+        luB.move_velocity(-translationL + rightX + left_turn_speed);
+        llA.move_velocity(-translationL + rightX - left_turn_speed);
+        llB.move_velocity(-translationL + rightX - left_turn_speed);
 
-        ruA.move_velocity(translationR + right_turn_speed);
-        ruB.move_velocity(translationR + right_turn_speed);
-        rlA.move_velocity(translationR - right_turn_speed);
-        rlB.move_velocity(translationR - right_turn_speed);
+        ruA.move_velocity(translationR + rightX + right_turn_speed);
+        ruB.move_velocity(translationR + rightX + right_turn_speed);
+        rlA.move_velocity(translationR + rightX - right_turn_speed);
+        rlB.move_velocity(translationR + rightX - right_turn_speed);
         
         pros::delay(15);
     }
