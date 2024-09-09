@@ -128,8 +128,8 @@ void set_wheel_angle(){
             float left_current_angle = getNormalizedSensorAngle(left_rotation_sensor);
             float right_current_angle = getNormalizedSensorAngle(right_rotation_sensor);
 
-            float left_error = wrapAngle((target_angleL + (rightX != 0 ? (rightX > 0 ? 40 : -40) : 0)) - left_current_angle);
-            float right_error = wrapAngle((target_angleR + (rightX != 0 ? (rightX > 0 ? 40 : -40) : 0)) - right_current_angle);
+            float left_error = wrapAngle((target_angleL + (rightX != 0 ? (rightX > 0 ? 10 : -10) : 0)) - left_current_angle);
+            float right_error = wrapAngle((target_angleR + (rightX != 0 ? (rightX > 0 ? 10 : -10) : 0)) - right_current_angle);
 
             left_integral += left_error;
             right_integral += right_error;
@@ -146,19 +146,19 @@ void set_wheel_angle(){
             left_turn_speed = left_motor_speed;
             right_turn_speed = right_motor_speed;
 
-            if(fabs(left_error) <= 2){
+            if(fabs(left_error) <= 1){
                 left_turn_speed = 0;
             }
-            if(fabs(right_error) <= 2){
+            if(fabs(right_error) <= 1){
                 right_turn_speed = 0;
             }
-            if(fabs(left_error) <= 2 && fabs(right_error) <= 2){
+            if(fabs(left_error) <= 1 && fabs(right_error) <= 1){
                 left_turn_speed = 0;
                 right_turn_speed = 0;
                 setAngle = false;
                 break;
             }
-            pros::delay(2);
+            pros::delay(5);
         }
         pros::delay(5);
     }
@@ -176,7 +176,7 @@ int currDirection = 0;
 
 void SwerveTranslation(){
     while(1){
-        float magnitude = std::sqrt(leftY * leftY + leftX * leftX);
+        float magnitude = std::sqrt(leftY * leftY + leftX * leftX) * SCALING_FACTOR;
         int move_speed = static_cast<int>(magnitude);
 
         float direction = -getAngle(leftY, leftX);
@@ -309,36 +309,35 @@ void opcontrol()
         // rlB.move_velocity(translationR + rightX - right_turn_speed);
 
         if(leftX !=0 || leftY != 0){
-            rightX = bound_value(rightX) * 0.3;
-            int powerL = bound_value((translationL + rightX) * SCALING_FACTOR);
+            int powerL = bound_value(translationL + (rightX * SCALING_FACTOR));
             int turnL = bound_value(left_turn_speed * SCALING_FACTOR);
-            int powerR = bound_value((translationR - rightX) * SCALING_FACTOR);
+            int powerR = bound_value(translationR - (rightX * SCALING_FACTOR));
             int turnR = bound_value(right_turn_speed * SCALING_FACTOR);
 
-            luA.move_velocity(powerL - turnL);
-            luB.move_velocity(powerL - turnL);
-            llA.move_velocity(powerL + turnL);
-            llB.move_velocity(powerL + turnL);
+            luA.move_velocity(-powerL - turnL);
+            luB.move_velocity(-powerL - turnL);
+            llA.move_velocity(-powerL + turnL);
+            llB.move_velocity(-powerL + turnL);
 
-            ruA.move_velocity(powerR - turnR);
-            ruB.move_velocity(powerR - turnR);
-            rlA.move_velocity(powerR + turnR);
-            rlB.move_velocity(powerR + turnR);
+            ruA.move_velocity(-powerR - turnR);
+            ruB.move_velocity(-powerR - turnR);
+            rlA.move_velocity(-powerR + turnR);
+            rlB.move_velocity(-powerR + turnR);
         }
         else if(rightX != 0 && leftX == 0 && leftY == 0){
             rightX = bound_value(rightX * SCALING_FACTOR);
-            target_angleL = (rightX > 0 ? -40 : 40);
-            target_angleR = (rightX > 0 ? -40 : 40);
+            target_angleL = (rightX > 0 ? -10 : 10);
+            target_angleR = (rightX > 0 ? -10 : 10);
             setAngle = true;
-            luA.move_velocity(rightX - bound_value(left_turn_speed * SCALING_FACTOR));
-            luB.move_velocity(rightX - bound_value(left_turn_speed * SCALING_FACTOR));
-            llA.move_velocity(rightX + bound_value(left_turn_speed * SCALING_FACTOR));
-            llB.move_velocity(rightX + bound_value(left_turn_speed * SCALING_FACTOR));
+            luA.move_velocity(-rightX - bound_value(left_turn_speed * SCALING_FACTOR));
+            luB.move_velocity(-rightX - bound_value(left_turn_speed * SCALING_FACTOR));
+            llA.move_velocity(-rightX + bound_value(left_turn_speed * SCALING_FACTOR));
+            llB.move_velocity(-rightX + bound_value(left_turn_speed * SCALING_FACTOR));
 
-            ruA.move_velocity(-rightX - bound_value(right_turn_speed * SCALING_FACTOR));
-            ruB.move_velocity(-rightX - bound_value(right_turn_speed * SCALING_FACTOR));
-            rlA.move_velocity(-rightX + bound_value(right_turn_speed * SCALING_FACTOR));
-            rlB.move_velocity(-rightX + bound_value(right_turn_speed * SCALING_FACTOR));
+            ruA.move_velocity(rightX - bound_value(right_turn_speed * SCALING_FACTOR));
+            ruB.move_velocity(rightX - bound_value(right_turn_speed * SCALING_FACTOR));
+            rlA.move_velocity(rightX + bound_value(right_turn_speed * SCALING_FACTOR));
+            rlB.move_velocity(rightX + bound_value(right_turn_speed * SCALING_FACTOR));
         }
 
         pros::delay(10);

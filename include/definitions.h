@@ -35,18 +35,18 @@ float other_angle, target_angle = 0;
 bool setAngle = false;
 
 // PID control constants for swerve strafing
-const float lkP = 1.01;
+const float lkP = 1.1;
 const float lkI = 0.0;
 const float lkD = 0.0;
 
-const float rkP = 1.01;
+const float rkP = 1.1;
 const float rkI = 0.0;
 const float rkD = 0.0;
 
 const int ANGLE_THRESHOLD = 10;
 
 //Joystick deadband value
-const int DEADBAND = 15;
+const int DEADBAND = 10;
 
 //Maximum RPM for VEX Green cartridges
 const int MAX_RPM = 600;
