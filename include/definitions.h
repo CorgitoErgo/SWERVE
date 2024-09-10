@@ -33,6 +33,8 @@ int leftX, leftY, rightX, rightY;
 int left_turn_speed, right_turn_speed;
 float other_angle, target_angle = 0;
 bool setAngle = false;
+bool setAngleL = false;
+bool setAngleR = false;
 
 // PID control constants for swerve strafing
 const float lkP = 1.1;
@@ -43,13 +45,15 @@ const float rkP = 1.1;
 const float rkI = 0.0;
 const float rkD = 0.0;
 
+bool toggleTank = false;
+
 const int ANGLE_THRESHOLD = 10;
 
 //Joystick deadband value
-const int DEADBAND = 10;
+const int DEADBAND = 10.0;
 
 //Maximum RPM for VEX Green cartridges
-const int MAX_RPM = 600;
+const int MAX_RPM = 600.0;
 
 // Scaling factor from joystick to RPM
-const double SCALING_FACTOR = 600.0 / 127.0;
+const double SCALING_FACTOR = MAX_RPM / 127.0;
