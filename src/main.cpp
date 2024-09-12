@@ -405,14 +405,6 @@ void opcontrol()
             if(leftX == 0 && leftY == 0 && rightX == 0 && rightY == 0){
                 brake();
             }
-
-            if(leftX !=0 || leftY != 0){
-                if(translationL < 0)
-                    if(rightX > 0)
-                        rightX = -rightX;
-                if(translationL > 0)
-                    if(rightX < 0)
-                        rightX = -rightX;
                 int powerL = bound_value(translationL + (rightX * SCALING_FACTOR));
                 int turnL = bound_value(left_turn_speed * SCALING_FACTOR);
                 int powerR = bound_value(translationR - (rightX * SCALING_FACTOR));
